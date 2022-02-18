@@ -1,11 +1,14 @@
 import React, { Fragment, useState } from 'react';
-import axios from 'axios';
+
+import { uploadFile, downloadFile } from '../api/index';
+import { URL } from '../constants/index';
+import './styles.css';
 
 const FileUpload = () => {
 
     const [file, setFile] = useState('');
     const [filename, setFilename] = useState('Choose File');
-    const [uploadedFile, setUploadedFile] = useState({data : { file : { name: 'welcome.jfif' } }});
+    const [uploadedFile, setUploadedFile] = useState(null);
     
     const onChange = (e) => {
         setFile(e.target.files[0]);
@@ -14,15 +17,12 @@ const FileUpload = () => {
     
     const onSubmit = async e => {
         e.preventDefault(); 
+
         const formData = new FormData();    
         formData.append('file', file);
     
         try {
-            const res = await axios.post('http://localhost:5000/api/upload', formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }
-            })
+            const res = await uploadFile(formData);
             setUploadedFile(res);
         } catch (error) {
             console.log(error);
@@ -30,49 +30,50 @@ const FileUpload = () => {
     }
 
     const downloadImage = async () => {
+        
         try {
-
-           const file = await axios.get('http://localhost:5000/api/get/620f6200e2f5b5d8a732ea27');
-           console.log(file)
-           const res = await axios.get('http://localhost:5000/api/download/620f6200e2f5b5d8a732ea27', {
-            responseType: 'blob'
-          });
+          const res = await downloadFile(uploadedFile.data.file._id);
+        
           const url = window.URL.createObjectURL(new Blob([res.data], {type: res.data.type}));
           const link = document.createElement('a');
           link.href = url;
-          link.setAttribute('download', file.data.file.name);
+          link.setAttribute('download', uploadedFile.data.file._id);
           document.body.appendChild(link);
           link.click();
           link.remove();
-            console.log("res ",res);
+        
         } catch(error) {
             console.log(error)
         }
     }
-  return (
-    <Fragment>
-        <form onSubmit={onSubmit} className="row">
-            <div className="custom-file mb-4">
-                <input type="file" className="custom-file-input" id="customFile" onChange={onChange} />
-                <label className="custom-file-label" htmlFor="customFile"></label>
-            </div>
 
-            <input type="submit" value="Upload" className="btn btn-primary btn-block mt-4" />
-        </form>
-        {uploadedFile ? (
-            <div className="row mt-5">
-                <div className="col-md-6 m-auto">
-                    <h3 className="text-center">{uploadedFile?.data?.file?.name}</h3>
-                    <img style= {{ 'width': '100%' }} src={'http://localhost:5000/'+uploadedFile?.data?.file?.name} />
+    return (
+        <Fragment>
+            <form onSubmit={onSubmit} className="row">
+                <div>
+                    <label htmlFor="formFile" className="form-label" ></label>
+                    <input className="form-control" type="file" id="formFile" accept="image/*,.pdf" onChange={onChange}/>
+                </div>
+                <input type="submit" value="UPLOAD" className="btn btn-primary btn-block mt-4" />
+            </form>
+            
+            {uploadedFile ? (
+            <div className="row mt-5">   
+                <div className="parent col-md-6 m-auto">
+                    { uploadedFile.data.file.mimetype.split('/')[0] === "image" ? 
+                        <img 
+                        src={URL+uploadedFile?.data?.file?.name} /> :  
+                        <iframe
+                            src={URL+uploadedFile?.data?.file?.name}
+                        ></iframe>  }
                 </div>
             </div>
-        ) : null }
-        <div className="row">
-        <button className="btn btn-primary mt-5 mb-4" onClick={downloadImage} >download</button>
-
-        </div>
-    </Fragment>
-  )
+            ) : null }
+            <div className="row">
+                <button className="btn btn-primary mt-4" disabled={!uploadedFile} onClick={downloadImage} >DOWNLOAD</button>
+            </div>
+        </Fragment>
+    )
 }
 
 export default FileUpload

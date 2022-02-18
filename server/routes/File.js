@@ -20,10 +20,10 @@ router.post("/upload", async (req, res) => {
                 mimetype: file.mimetype,
                 size: file.size
             })
-            await savedFile.save();
+            const newFile = await savedFile.save();
             let uploadPath = __dirname + '\\..\\uploads\\' + file.name;
             file.mv(uploadPath);
-            res.status(201).json({ success: true, message: "File uploaded", file: file });
+            res.status(201).json({ success: true, message: "File uploaded", file: newFile });
         }
     } catch (error) {
         res.status(401).json({ success: false, message: error.message });
