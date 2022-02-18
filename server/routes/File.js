@@ -23,7 +23,7 @@ router.post("/upload", async (req, res) => {
             await savedFile.save();
             let uploadPath = __dirname + '\\..\\uploads\\' + file.name;
             file.mv(uploadPath);
-            res.status(201).json({ success: true, message: "File uploaded" });
+            res.status(201).json({ success: true, message: "File uploaded", file: file });
         }
     } catch (error) {
         res.status(401).json({ success: false, message: error.message });
@@ -52,8 +52,22 @@ router.get("/download/:id", async (req, res) => {
             const file = await File.findById(id);
             // const filePath = __dirname + '\\..\\uploads\\' + file.name;
             let fileLocation = __dirname + '\\..\\uploads\\' + file.name;
-            res.status(201).json({ success: true, fileLocation });
-            res.download(fileLocation, file);
+            res.download(fileLocation)
+
+        } else {
+            res.status(401).json({ success: false, message: "File Not Found" });
+        }
+    } catch (error) {
+        res.status(401).json({ success: false, message: error.message });
+    }
+})
+
+router.get("/get/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        if (id) {
+            const file = await File.findById(id);
+            res.status(200).json({ success: true, message: "File Found", file: file });
         } else {
             res.status(401).json({ success: false, message: "File Not Found" });
         }
